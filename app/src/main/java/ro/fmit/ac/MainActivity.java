@@ -63,10 +63,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         mediaRecorder.prepare();
                         mediaRecorder.start();
-                    } catch (IllegalStateException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (IOException e) {
+                    } catch (IllegalStateException | IOException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
