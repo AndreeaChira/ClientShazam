@@ -40,5 +40,12 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.8.1'
     implementation 'com.squareup.retrofit2:converter-gson:2.8.1'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.6.0'
+    implementation 'com.squareup.retrofit2:converter-scalars:2.8.1'
+    implementation 'com.squareup.picasso:picasso:2.71828'
 
+
+    //For Checking permissions
+    implementation 'com.karumi:dexter:6.2.3'
+//To Visualize Music
+    // implementation 'com.gauravk.audiovisualizer:audiovisualizer:0.9.2'
 }

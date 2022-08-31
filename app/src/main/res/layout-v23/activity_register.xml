@@ -53,7 +53,7 @@
           android:background="#0000"
           android:drawableStart="@drawable/ic_user_24"
           android:drawableTint="@color/colorInputText"
-          android:hint="Nume"
+          android:hint="Name"
           android:inputType="text"
           android:padding="16dp"
           android:textColor="@color/colorInputText"
