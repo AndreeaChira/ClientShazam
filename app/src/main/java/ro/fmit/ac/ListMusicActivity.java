@@ -52,10 +52,10 @@ public class ListMusicActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_list_music);
 
         //Assigning Address of the Android Materials
-        listView = findViewById(R.id.ListView);
+        listView = (ListView) findViewById(R.id.list);
 
         //Calling Method for asking permission
         runTimePermission();
