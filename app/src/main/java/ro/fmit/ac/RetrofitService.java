@@ -10,11 +10,11 @@ import retrofit2.http.Part;
 public interface RetrofitService {
 
 
-    @POST("/")
+    @POST("/users/login")
     Call<LoginResponse>loginUser(@Body LoginRequest loginRequest);
 
 
-    @POST("")
+    @POST("/users/register")
     Call<RegisterResponse> registerUser(@Body RegisterRequest registerRequest);
 
 

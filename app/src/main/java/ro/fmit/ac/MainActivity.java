@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -34,11 +35,25 @@ public class MainActivity extends AppCompatActivity {
     public static final int RequestPermissionCode = 1;
     MediaPlayer mediaPlayer ;
 
+    LoginResponse loginResponse;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Intent intent=getIntent();
+        if(intent.getExtras()!=null)
+        {
+            loginResponse=(LoginResponse) intent.getSerializableExtra("data");
+            System.out.println("========================"+loginResponse.getSongList());
+            for (Song song : loginResponse.songList) {
+                System.out.println(song);
+            }
+
+//            if(!loginResponse())
+//                Log.e("=>>>>>>>>>>>>>>TAG",loginResponse.getSongList().toString());
+
+        }
         buttonStart = (Button) findViewById(R.id.button);
         buttonStop = (Button) findViewById(R.id.button2);
         buttonPlayLastRecordAudio = (Button) findViewById(R.id.button3);
