@@ -3,7 +3,7 @@ package ro.fmit.ac;
 public class LoginRequest {
 
     private String email;
-    private String pass;
+    private String password;
 
     public String getEmail() {
         return email;
@@ -14,10 +14,10 @@ public class LoginRequest {
     }
 
     public String getPass() {
-        return pass;
+        return password;
     }
 
     public void setPass(String pass) {
-        this.pass = pass;
+        this.password = pass;
     }
 }

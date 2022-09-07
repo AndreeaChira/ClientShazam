@@ -4,7 +4,7 @@ public class RegisterRequest {
 
     private String name;
     private String email;
-    private String pass;
+    private String password;
 
     public String getName() {
         return name;
@@ -23,10 +23,10 @@ public class RegisterRequest {
     }
 
     public String getPass() {
-        return pass;
+        return password;
     }
 
     public void setPass(String pass) {
-        this.pass = pass;
+        this.password = pass;
     }
 }
