@@ -20,9 +20,16 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Random;
 
 import static android.Manifest.permission.RECORD_AUDIO;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Retrofit;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -35,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
     public static final int RequestPermissionCode = 1;
     MediaPlayer mediaPlayer ;
 
+    Button  btnListMusic;
+    Button btnGetListMood;
+
     LoginResponse loginResponse;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,19 +55,15 @@ public class MainActivity extends AppCompatActivity {
         if(intent.getExtras()!=null)
         {
             loginResponse=(LoginResponse) intent.getSerializableExtra("data");
-            System.out.println("========================"+loginResponse.getSongList());
-            for (Song song : loginResponse.getSongList()) {
-                System.out.println(song.getTitle());
-            }
-
-//            if(!loginResponse())
-//                Log.e("=>>>>>>>>>>>>>>TAG",loginResponse.getSongList().toString());
 
         }
         buttonStart = (Button) findViewById(R.id.button);
         buttonStop = (Button) findViewById(R.id.button2);
         buttonPlayLastRecordAudio = (Button) findViewById(R.id.button3);
         buttonStopPlayingRecording = (Button)findViewById(R.id.button4);
+        btnListMusic=findViewById(R.id.listofmusic);
+        btnGetListMood=findViewById(R.id.getListbyMood);
+
 
         buttonStop.setEnabled(false);
         buttonPlayLastRecordAudio.setEnabled(false);
@@ -72,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
                 if(checkPermission()) {
 
 //                    AudioSavePathInDevice = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + CreateRandomAudioFileName(5) + "AudioRecording.3gp";
-                    AudioSavePathInDevice= getExternalCacheDir().getAbsolutePath() + "/audiorecordtest.3gp";
+                    AudioSavePathInDevice= getExternalCacheDir().getAbsolutePath() + "/audiorecordtest.mp3";
                     MediaRecorderReady();
 
                     try {
@@ -132,6 +138,8 @@ public class MainActivity extends AppCompatActivity {
 
                 mediaPlayer.start();
 
+
+
                 Toast.makeText(MainActivity.this, "Recording Playing", Toast.LENGTH_LONG).show();
 
             }
@@ -154,7 +162,51 @@ public class MainActivity extends AppCompatActivity {
                     MediaRecorderReady();
 
                 }
+                File audioFile = new File(AudioSavePathInDevice);
+                Retrofit retrofit= ApiClient.getRetrofi();
+                RequestBody requestBody=RequestBody.create(MediaType.parse("audio/*"),audioFile);
+                MultipartBody.Part part = MultipartBody.Part.createFormData("audio",audioFile.getName(),requestBody);
+                RequestBody someData=RequestBody.create(MediaType.parse("text/plain"),"audio");
+                Call<List<Song>> loginResponseCall=ApiClient.getservice().postAudioAndGetResponse(part,someData);
+                loginResponseCall.enqueue(new retrofit2.Callback<List<Song>>() {
+                    @Override
+                    public void onResponse(Call<List<Song>> call, retrofit2.Response<List<Song>> response) {
+                        if(response.isSuccessful())
+                        {
+                            List<Song> songs=response.body();
+                            for(Song song:songs)
+                            {
 
+                                Toast.makeText(MainActivity.this, song.subtitle+ "/"+song.getTitle(), Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<Song>> call, Throwable t) {
+
+                    }
+                });
+
+            }
+        });
+
+        btnListMusic.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(loginResponse!=null)
+                {
+                    startActivity(new Intent(MainActivity.this,ListMusicActivity.class).putExtra("data",loginResponse));
+                    finish();
+                }
+            }
+        });
+
+        btnGetListMood.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this,UploadPhotoActivity.class));
+                finish();
             }
         });
     }
@@ -165,9 +217,9 @@ public class MainActivity extends AppCompatActivity {
 
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
 
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
         mediaRecorder.setOutputFile(AudioSavePathInDevice);
 

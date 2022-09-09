@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
@@ -21,6 +22,9 @@ import android.widget.Toast;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -63,12 +67,25 @@ public class UploadPhotoActivity extends AppCompatActivity {
                         if(options[i].equals("Camera"))
                         {
                             Intent takePic=new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
                             startActivityForResult(takePic,0);
                         }
                         else if(options[i].equals("Gallery"))
                         {
-                            Intent gallery=new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                            startActivityForResult(gallery,1);
+//                            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+//                            intent.setType("image/*");
+
+
+                            Intent pickIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+                            pickIntent.setType("image/*");
+
+//                            Intent chooserIntent = Intent.createChooser(getIntent, "Select Image");
+//                            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] {pickIntent});
+
+                            startActivityForResult(pickIntent, 1);
+//                            Intent gallery=new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+//                            gallery.setType("image/*");
+//                            startActivityForResult(gallery,1);
                         }
                         else
                         {
@@ -84,7 +101,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         buttonPhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(filePath.isEmpty())
+                if(filePath!=null)
                     uploadImageandgetMood();
                 else
                 {
@@ -107,7 +124,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                         Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
                     }
                     else
-                        uploadImageandgetMood();
+                        uploadImageAndGetList();
             }
         });
     }
@@ -125,6 +142,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                         Bitmap image =(Bitmap) data.getExtras().get("data");
                         selectedImage=FileUtils.getPath(UploadPhotoActivity.this,getImageUri(UploadPhotoActivity.this,image));
                         filePath=FileUtils.getPath(UploadPhotoActivity.this,getImageUri(UploadPhotoActivity.this,image));
+
                         imageView.setImageBitmap(image);
 
                     }
@@ -175,6 +193,38 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<emotion> call, Throwable t) {
+                String message= t.getLocalizedMessage();
+                Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        });
+
+    }
+
+    public void uploadImageAndGetList() {
+        File file=new File(filePath);
+        Retrofit retrofit= ApiClient.getRetrofi();
+        RequestBody requestBody=RequestBody.create(MediaType.parse("image/*"),file);
+        MultipartBody.Part part = MultipartBody.Part.createFormData("image",file.getName(),requestBody);
+        RequestBody someData=RequestBody.create(MediaType.parse("text/plain"),"image");
+        RetrofitService retrofitService=retrofit.create(RetrofitService.class);
+        Call<LoginResponse> call=retrofitService.callListSongsByMood(part,someData);
+        call.enqueue(new Callback<LoginResponse>() {
+            @Override
+            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+
+                if(response.isSuccessful())
+                {
+                    LoginResponse loginResponse = response.body();
+                    startActivity(new Intent(UploadPhotoActivity.this,ListMusicActivity.class).putExtra("data", loginResponse));
+                }
+                else{
+                    String message= "An error occured, please try again later";
+                    Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<LoginResponse> call, Throwable t) {
                 String message= t.getLocalizedMessage();
                 Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
             }

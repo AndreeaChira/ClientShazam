@@ -16,7 +16,9 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Adapter;
@@ -40,14 +42,20 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.Serializable;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Retrofit;
 
 public class ListMusicActivity extends AppCompatActivity {
 
 
     ListView listView;
     String[] items;
+    LoginResponse loginResponse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +67,28 @@ public class ListMusicActivity extends AppCompatActivity {
 
         //Calling Method for asking permission
         runTimePermission();
+        Intent intent=getIntent();
+        if(intent.getExtras()!=null)
+        {
+            loginResponse=(LoginResponse) intent.getSerializableExtra("data");
+            if(loginResponse!=null)
+            {
+                displaySongs(loginResponse);
+            }
+            //System.out.println(loginResponse.getSongList());
 
+
+            List<Song> songsRecived= (List<Song>) intent.getSerializableExtra("uploadSongs");
+            if(songsRecived!=null)
+            {
+                loginResponse.setSongList(songsRecived);
+                loginResponse.setEmail("Andreea@gmail.com");
+                loginResponse.setName("andreea");
+                displaySongs(loginResponse);
+            }
+
+
+        }
 
     }
 
@@ -141,6 +170,49 @@ public class ListMusicActivity extends AppCompatActivity {
             }
         });
     }
+    public void displaySongs(LoginResponse loginResponse){
+        List<Song> songs=loginResponse.getSongList();
+        for(Song song:songs){
+            System.out.println(song.getName());
+        }
+        OnlineAdapter customAdapter=new OnlineAdapter(songs);
+        listView.setAdapter(customAdapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Song song = (Song) listView.getItemAtPosition(i);
+                NameSong songName = new NameSong();
+                songName.setNameSong(song.getSubtitle()+" - "+song.getName());
+                System.out.println("++++++++++++++++++++++++++"+i);
+                //Call retrofit service to get song
+                Retrofit retrofit=ApiClient.getRetrofi();
+                RetrofitService service=retrofit.create(RetrofitService.class);
+                Call call=service.callGetLinkByNameSong(songName);
+                call.enqueue(new retrofit2.Callback() {
+                    @Override
+                    public void onResponse(Call call, retrofit2.Response response) {
+                        NameSong link= (NameSong) response.body();
+                        //download from link song
+
+                        System.out.println("++++++++++++++++++++++++++"+link);
+                        Intent intent = new Intent(getApplicationContext(), PlayMusicActivity.class);
+                        intent.putExtra("link_online", link.getNameSong());
+                        intent.putExtra("songname_online", song.getName());
+                        intent.putExtra("pos", i);
+                        startActivity(intent);
+                    }
+
+                    @Override
+                    public void onFailure(Call call, Throwable t) {
+                        Log.d("Error",t.getMessage());
+                    }
+                });
+
+            }
+        });
+    }
+
 
 
     class CustomAdapter extends BaseAdapter {
@@ -169,6 +241,37 @@ public class ListMusicActivity extends AppCompatActivity {
             TextView txtSong = view.findViewById(R.id.SongName);
             txtSong.setSelected(true);
             txtSong.setText(items[position]);
+            return view;
+        }
+    }
+
+    class OnlineAdapter extends BaseAdapter{
+        private  List<Song> songs;
+        public OnlineAdapter(List<Song> songs){
+            this.songs=songs;
+        }
+
+        @Override
+        public int getCount() {
+            return songs.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return songs.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View view = getLayoutInflater().inflate(R.layout.song_name_layout, null);
+            TextView txtSong = view.findViewById(R.id.SongName);
+            txtSong.setSelected(true);
+            txtSong.setText(songs.get(position).getName()+"-"+songs.get(position).getSubtitle());
             return view;
         }
     }

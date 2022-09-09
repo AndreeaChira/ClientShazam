@@ -2,6 +2,7 @@ package ro.fmit.ac;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.media.AudioManager;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,6 +30,7 @@ import android.widget.Toast;
 //import com.gauravk.audiovisualizer.visualizer.CircleLineVisualizer;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class PlayMusicActivity extends AppCompatActivity {
@@ -36,25 +38,21 @@ public class PlayMusicActivity extends AppCompatActivity {
     Button btnPlay, btnNext, btnPrevious, btnFastForward, btnFastBackWard;
     TextView txtSongName, txtSongStart, txtSongEnd;
     SeekBar seekMusicBar;
-    //BarVisualizer barVisualizer;
-
-
     ImageView imageView;
-
-
     String songName;
     public static final String EXTRA_NAME = "song_name";
     static MediaPlayer mediaPlayer;
     int position;
-
+    String song;
+    String title;
     ArrayList<File> mySongs;
-
     Thread updateSeekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_music);
+
 
         //Assigning the address of the andorid Materials
         btnPlay = (Button) findViewById(R.id.BtnPlay);
@@ -63,7 +61,6 @@ public class PlayMusicActivity extends AppCompatActivity {
         btnFastForward = (Button) findViewById(R.id.BtnFastForward);
         btnFastBackWard = (Button) findViewById(R.id.BtnFastRewind);
 
-
         txtSongName = (TextView) findViewById(R.id.SongTxt);
         txtSongStart = (TextView) findViewById(R.id.TxtSongStart);
         txtSongEnd = (TextView) findViewById(R.id.TxtSongEnd);
@@ -71,6 +68,9 @@ public class PlayMusicActivity extends AppCompatActivity {
         seekMusicBar = (SeekBar) findViewById(R.id.SeekBar);
 
         imageView = (ImageView) findViewById(R.id.MusicImage);
+
+
+
 
         //Checking if any song playing or not
         if (mediaPlayer != null) {
@@ -84,250 +84,306 @@ public class PlayMusicActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
 
+
         mySongs = (ArrayList) bundle.getIntegerArrayList("songs");
         String sName = intent.getStringExtra("songname");
+        song= intent.getStringExtra("songname_online");
+        title=intent.getStringExtra("link_online");
+        System.out.println("song name is "+song+" and link is "+title);
+        if(!song.isEmpty()&&!title.isEmpty()){
+            txtSongName.setText(song);
+            txtSongName.setSelected(true);
+            updateSeekBar = new Thread() {
+                @Override
+                public void run() {
+
+                    int TotalDuration = mediaPlayer.getDuration();
+                    int CurrentPosition = 0;
+
+                    while (CurrentPosition < TotalDuration) {
+                        try {
+
+                            sleep(500);
+                            CurrentPosition = mediaPlayer.getCurrentPosition();
+                            seekMusicBar.setProgress(CurrentPosition);
+
+                        } catch (InterruptedException | IllegalStateException e) {
+
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            };
+
+            playSong(title);
+            seekMusicBar.setMax(mediaPlayer.getDuration());
+            updateSeekBar.start();
+
+
+            //Setting the Music player from the position of the seekbar
+            seekMusicBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    //getting the progress of the seek bar and setting it to Media Player
+                    mediaPlayer.seekTo(seekBar.getProgress());
+
+                }
+            });
+            btnFastForward.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (mediaPlayer.isPlaying()) {
+
+                        //Getting the current position and adding 10sec to it
+                        mediaPlayer.seekTo(mediaPlayer.getCurrentPosition() + 10000);
+
+                    }
+                }
+            });
+
+
+            //Implementing the FastBackWard
+            btnFastBackWard.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (mediaPlayer.isPlaying()) {
+
+                        //Getting the curent Position of the song and decrease 10sec from it
+                        mediaPlayer.seekTo(mediaPlayer.getCurrentPosition() - 10000);
+
+                    }
+                }
+            });
+        }
+
         position = bundle.getInt("pos");
         txtSongName.setSelected(true);
 
         //Extracting the fileName form the ArrayList
-        Uri uri = Uri.parse(mySongs.get(position).toString());
-        songName = mySongs.get(position).getName();
-        txtSongName.setText(songName);
+        if(mySongs!=null)
+        {
+            Uri uri = Uri.parse(mySongs.get(position).toString());
+            songName = mySongs.get(position).getName();
+            txtSongName.setText(songName);
 
-        //passing the song path to the Media Player
-        mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
-        mediaPlayer.start();
+            //passing the song path to the Media Player
+            mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
+            mediaPlayer.start();
 
-        //Method to get the current media end time
-        songEndTime();
+            //Method to get the current media end time
+            songEndTime();
+            //Thread to update the seekBar while playing song
+            updateSeekBar = new Thread() {
+                @Override
+                public void run() {
 
-        //Method to show bar visualizers
+                    int TotalDuration = mediaPlayer.getDuration();
+                    int CurrentPosition = 0;
+
+                    while (CurrentPosition < TotalDuration) {
+                        try {
+
+                            sleep(500);
+                            CurrentPosition = mediaPlayer.getCurrentPosition();
+                            seekMusicBar.setProgress(CurrentPosition);
+
+                        } catch (InterruptedException | IllegalStateException e) {
+
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            };
 
 
+            //Setting the seekbar's max progress to the maximum duration of the media file
+            seekMusicBar.setMax(mediaPlayer.getDuration());
+            updateSeekBar.start();
 
-        //Thread to update the seekBar while playing song
-        updateSeekBar = new Thread() {
-            @Override
-            public void run() {
 
-                int TotalDuration = mediaPlayer.getDuration();
-                int CurrentPosition = 0;
+            //Setting the Music player from the position of the seekbar
+            seekMusicBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
 
-                while (CurrentPosition < TotalDuration) {
-                    try {
+                }
 
-                        sleep(500);
-                        CurrentPosition = mediaPlayer.getCurrentPosition();
-                        seekMusicBar.setProgress(CurrentPosition);
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
 
-                    } catch (InterruptedException | IllegalStateException e) {
+                }
 
-                        e.printStackTrace();
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    //getting the progress of the seek bar and setting it to Media Player
+                    mediaPlayer.seekTo(seekBar.getProgress());
+
+                }
+            });
+
+
+            //Creating the Handler to update the current duration
+            final Handler handler = new Handler();
+            final int delay = 1000;
+
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+
+                    //Getting the current duration from the media player
+                    String currentTime = createDuration(mediaPlayer.getCurrentPosition());
+
+                    //Setting the current duration in textView
+                    txtSongStart.setText(currentTime);
+                    handler.postDelayed(this, delay);
+
+                }
+            }, delay);
+
+
+            //Implementing OnClickListener for Play and Pause Button
+            btnPlay.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    //Checking playing any songs or not
+                    if (mediaPlayer.isPlaying()) {
+
+                        //setting the play icon
+                        btnPlay.setBackgroundResource(R.drawable.play_song_icon);
+
+                        //Pausing the current media
+                        mediaPlayer.pause();
+
+                    } else {
+
+                        //Setting the pause icon
+                        btnPlay.setBackgroundResource(R.drawable.pause_song_icon);
+
+                        //Starting the media player
+                        mediaPlayer.start();
+
+                        //Creating the Animation
+                        TranslateAnimation moveAnim = new TranslateAnimation(-25, 25, -25, 25);
+                        moveAnim.setInterpolator(new AccelerateInterpolator());
+                        moveAnim.setDuration(600);
+                        moveAnim.setFillEnabled(true);
+                        moveAnim.setFillAfter(true);
+                        moveAnim.setRepeatMode(Animation.REVERSE);
+                        moveAnim.setRepeatCount(1);
+
+                        //Setting the Animation for the Image
+                        imageView.startAnimation(moveAnim);
+
+                        //Calling the BarVisualizer
+
                     }
                 }
+            });
 
-            }
-        };
-
-
-        //Setting the seekbar's max progress to the maximum duration of the media file
-        seekMusicBar.setMax(mediaPlayer.getDuration());
-        updateSeekBar.start();
-
-
-        //Setting the Music player from the position of the seekbar
-        seekMusicBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-                //getting the progress of the seek bar and setting it to Media Player
-                mediaPlayer.seekTo(seekBar.getProgress());
-
-            }
-        });
+            //Performing the Button Click Operation after the completion of song
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    btnNext.performClick();
+                }
+            });
 
 
-        //Creating the Handler to update the current duration
-        final Handler handler = new Handler();
-        final int delay = 1000;
+            //Implementing OnclickListener
+            btnNext.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
 
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-
-                //Getting the current duration from the media player
-                String currentTime = createDuration(mediaPlayer.getCurrentPosition());
-
-                //Setting the current duration in textView
-                txtSongStart.setText(currentTime);
-                handler.postDelayed(this, delay);
-
-            }
-        }, delay);
+                    //Stoping the currently playing media
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
 
 
-        //Implementing OnClickListener for Play and Pause Button
-        btnPlay.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+                    //Getting the Current media position and incrementing it by 1
+                    position = ((position + 1) % mySongs.size());
 
-                //Checking playing any songs or not
-                if (mediaPlayer.isPlaying()) {
+                    //Extracting the media path form the array List
+                    Uri uri1 = Uri.parse(mySongs.get(position).toString());
 
-                    //setting the play icon
-                    btnPlay.setBackgroundResource(R.drawable.play_song_icon);
 
-                    //Pausing the current media
-                    mediaPlayer.pause();
+                    //Setting the path to the media player
+                    mediaPlayer = MediaPlayer.create(getApplicationContext(), uri1);
 
-                } else {
 
-                    //Setting the pause icon
-                    btnPlay.setBackgroundResource(R.drawable.pause_song_icon);
+                    //Getting the current song Name and setting it to TextView
+                    songName = mySongs.get(position).getName();
+                    txtSongName.setText(songName);
 
-                    //Starting the media player
+                    //Starting the Media Player
                     mediaPlayer.start();
 
-                    //Creating the Animation
-                    TranslateAnimation moveAnim = new TranslateAnimation(-25, 25, -25, 25);
-                    moveAnim.setInterpolator(new AccelerateInterpolator());
-                    moveAnim.setDuration(600);
-                    moveAnim.setFillEnabled(true);
-                    moveAnim.setFillAfter(true);
-                    moveAnim.setRepeatMode(Animation.REVERSE);
-                    moveAnim.setRepeatCount(1);
+                    //Extracting the duration of the song
+                    songEndTime();
 
-                    //Setting the Animation for the Image
-                    imageView.startAnimation(moveAnim);
 
-                    //Calling the BarVisualizer
+                    //Animating the ImageView
+                    startAnimation(imageView, 360f);
+
+
 
                 }
-            }
-        });
-
-        //Performing the Button Click Operation after the completion of song
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                btnNext.performClick();
-            }
-        });
+            });
 
 
-        //Implementing OnclickListener
-        btnNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                //Stoping the currently playing media
-                mediaPlayer.stop();
-                mediaPlayer.release();
+            //Implementing the OnClick Listener
+            btnPrevious.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
 
 
-                //Getting the Current media position and incrementing it by 1
-                position = ((position + 1) % mySongs.size());
-
-                //Extracting the media path form the array List
-                Uri uri1 = Uri.parse(mySongs.get(position).toString());
+                    //Stoping the media Player
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
 
 
-                //Setting the path to the media player
-                mediaPlayer = MediaPlayer.create(getApplicationContext(), uri1);
+                    //getting the  current media position and decrementing it by one
+                    position = ((position - 1) % mySongs.size());
+                    if (position < 0)
+                        position = mySongs.size() - 1;
+
+                    //Extracting the media path
+                    Uri uri1 = Uri.parse(mySongs.get(position).toString());
+
+                    //Setting the media path to the media player
+                    mediaPlayer = MediaPlayer.create(getApplicationContext(), uri1);
+                    songName = mySongs.get(position).getName();
+                    txtSongName.setText(songName);
+                    mediaPlayer.start();
+                    songEndTime();
 
 
-                //Getting the current song Name and setting it to TextView
-                songName = mySongs.get(position).getName();
-                txtSongName.setText(songName);
+                    //Animating the imageView
+                    startAnimation(imageView, -360f);
 
-                //Starting the Media Player
-                mediaPlayer.start();
-
-                //Extracting the duration of the song
-                songEndTime();
-
-
-                //Animating the ImageView
-                startAnimation(imageView, 360f);
-
-
-
-            }
-        });
-
-
-        //Implementing the OnClick Listener
-        btnPrevious.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-
-                //Stoping the media Player
-                mediaPlayer.stop();
-                mediaPlayer.release();
-
-
-                //getting the  current media position and decrementing it by one
-                position = ((position - 1) % mySongs.size());
-                if (position < 0)
-                    position = mySongs.size() - 1;
-
-                //Extracting the media path
-                Uri uri1 = Uri.parse(mySongs.get(position).toString());
-
-                //Setting the media path to the media player
-                mediaPlayer = MediaPlayer.create(getApplicationContext(), uri1);
-                songName = mySongs.get(position).getName();
-                txtSongName.setText(songName);
-                mediaPlayer.start();
-                songEndTime();
-
-
-                //Animating the imageView
-                startAnimation(imageView, -360f);
-
-
-            }
-
-        });
-
-
-        //Implementing the fastForward
-        btnFastForward.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mediaPlayer.isPlaying()) {
-
-                    //Getting the current position and adding 10sec to it
-                    mediaPlayer.seekTo(mediaPlayer.getCurrentPosition() + 10000);
 
                 }
-            }
-        });
+
+            });
 
 
-        //Implementing the FastBackWard
-        btnFastBackWard.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mediaPlayer.isPlaying()) {
+            //Implementing the fastForward
 
-                    //Getting the curent Position of the song and decrease 10sec from it
-                    mediaPlayer.seekTo(mediaPlayer.getCurrentPosition() - 10000);
-
-                }
-            }
-        });
+        }
 
     }
 
@@ -342,9 +398,19 @@ public class PlayMusicActivity extends AppCompatActivity {
         animatorSet.start();
 
     }
+    private void playSong(String url) {
+        mediaPlayer = new MediaPlayer();
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        try {
+            mediaPlayer.setDataSource(url);
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-
-    //Preparing the Time format for setting to textView
+        //Preparing the Time format for setting to textView
     public String createDuration(int duration) {
 
         String time = "";
