@@ -1,6 +1,9 @@
 package ro.fmit.ac;
 
+import java.util.List;
+
 import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Multipart;
@@ -19,8 +22,11 @@ public interface RetrofitService {
 
 
     @Multipart
-    @POST("uploadfile")
-    Call<FileModel> callUploadAPI(@Part MultipartBody.Part image);
+    @POST("/detect/trackMood")
+    Call<emotion> callUploadAPI(@Part MultipartBody.Part image, @Part("somedata") RequestBody requestBody);
 
+    @Multipart
+    @POST("detect/tracksByMood")
+    Call<List<Song>> callListSongsByMood(@Part MultipartBody.Part image, @Part("somedata") RequestBody requestBody);
 
 }

@@ -39,6 +39,7 @@
         android:layout_marginTop="10dp"
         android:text="Here will apear your mood"
         android:textSize="17sp"
+        android:id="@+id/textForMood"
         />
     <Button
         android:id="@+id/btnTakePhoto"

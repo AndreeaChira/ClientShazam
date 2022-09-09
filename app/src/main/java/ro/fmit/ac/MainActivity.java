@@ -46,8 +46,8 @@ public class MainActivity extends AppCompatActivity {
         {
             loginResponse=(LoginResponse) intent.getSerializableExtra("data");
             System.out.println("========================"+loginResponse.getSongList());
-            for (Song song : loginResponse.songList) {
-                System.out.println(song);
+            for (Song song : loginResponse.getSongList()) {
+                System.out.println(song.getTitle());
             }
 
 //            if(!loginResponse())

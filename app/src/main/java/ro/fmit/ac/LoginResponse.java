@@ -6,16 +6,17 @@ import java.util.List;
 public class LoginResponse implements Serializable {
     private String email;
     private String name;
-    private String pass;
-    List<Song> songList;
-    List<Integer> likedSongs;
+    private String password;
+    private List<Song> songs;
+    private List<Integer> likedSongs;
+    private String id;
 
     public List<Song> getSongList() {
-        return songList;
+        return songs;
     }
 
     public void setSongList(List<Song> songList) {
-        this.songList = songList;
+        this.songs = songList;
     }
 
     public List<Integer> getLikedSongs() {
@@ -43,14 +44,18 @@ public class LoginResponse implements Serializable {
     }
 
     public String getPass() {
-        return pass;
+        return password;
     }
 
     public void setPass(String pass) {
-        this.pass = pass;
+        this.password = pass;
     }
 
+    public String getId() {
+        return id;
+    }
 
-    //private songs
-    //private favsongs
+    public void setId(String id) {
+        this.id = id;
+    }
 }

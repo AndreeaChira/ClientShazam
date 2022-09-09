@@ -1,11 +1,15 @@
 package ro.fmit.ac;
 
-public class Song {
+import java.io.Serializable;
+import java.util.List;
+
+public class Song implements Serializable {
     Integer id;
-    String name;
+    String title;
     String subtitle;
     String href;
     String image;
+    String _id;
 
     public Integer getId() {
         return id;
@@ -15,12 +19,30 @@ public class Song {
         this.id = id;
     }
 
+    public String get_id() {
+        return _id;
+    }
+
+    public void set_id(String _id) {
+        this._id = _id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+
+
     public String getName() {
-        return name;
+        return title;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.title = name;
     }
 
     public String getSubtitle() {

@@ -8,17 +8,27 @@ import androidx.cardview.widget.CardView;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.RestrictionEntry;
 import android.graphics.Bitmap;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
+
+import java.io.File;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
 public class UploadPhotoActivity extends AppCompatActivity {
 
@@ -27,6 +37,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private Button buttonPhoto;
     private Button buttonSend;
     private CharSequence[] options= { "Camera","Gallery","Cancel"};
+    private String filePath;
+    private TextView textViewMood;
 
     private String selectedImage;
     @Override
@@ -38,6 +50,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         imageView=findViewById(R.id.imageView);
         buttonPhoto=findViewById(R.id.btnTakePhoto);
         buttonSend=findViewById(R.id.btnSendPhoto);
+        textViewMood=findViewById(R.id.textForMood);
 
         cardView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -68,6 +81,35 @@ public class UploadPhotoActivity extends AppCompatActivity {
             }
         });
 
+        buttonPhoto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(filePath.isEmpty())
+                    uploadImageandgetMood();
+                else
+                {
+                    String message= "Please select one photo";
+                    Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
+        buttonSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(filePath.isEmpty()){
+                    String message= "Please select one photo";
+                    Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
+                }else
+                    if(textViewMood.equals("Here will apear your mood"))
+                    {
+                        String message= "Please check your mood";
+                        Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
+                    }
+                    else
+                        uploadImageandgetMood();
+            }
+        });
     }
 
     @Override
@@ -82,13 +124,16 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     if(resultCode==RESULT_OK&& data!=null){
                         Bitmap image =(Bitmap) data.getExtras().get("data");
                         selectedImage=FileUtils.getPath(UploadPhotoActivity.this,getImageUri(UploadPhotoActivity.this,image));
+                        filePath=FileUtils.getPath(UploadPhotoActivity.this,getImageUri(UploadPhotoActivity.this,image));
                         imageView.setImageBitmap(image);
+
                     }
                     break;
                 case 1:
                     if(resultCode==RESULT_OK &&data!=null){
                         Uri image=data.getData();
                         selectedImage=FileUtils.getPath(UploadPhotoActivity.this,image);
+                        filePath=FileUtils.getPath(UploadPhotoActivity.this,image);
                         Picasso.get().load(image).into(imageView);
                     }
             }
@@ -99,4 +144,42 @@ public class UploadPhotoActivity extends AppCompatActivity {
         String path=MediaStore.Images.Media.insertImage(context.getContentResolver(),bitmap,"MyImage","");
         return Uri.parse(path);
     }
+
+    public void uploadImageandgetMood(){
+        File file=new File(filePath);
+        Retrofit retrofit= ApiClient.getRetrofi();
+        RequestBody requestBody=RequestBody.create(MediaType.parse("image/*"),file);
+        MultipartBody.Part part = MultipartBody.Part.createFormData("image",file.getName(),requestBody);
+
+        RequestBody someData=RequestBody.create(MediaType.parse("text/plain"),"image");
+
+
+        RetrofitService retrofitService=retrofit.create(RetrofitService.class);
+        Call<emotion> call=retrofitService.callUploadAPI(part,someData);
+        call.enqueue(new Callback<emotion>() {
+            @Override
+            public void onResponse(Call<emotion> call, Response<emotion> response) {
+                System.out.println("========================="+response.message());
+                if(response.isSuccessful())
+                {
+                    emotion emotions = response.body();
+                    System.out.println(emotions);
+                    System.out.println(emotions.getEmotion());
+                    textViewMood.setText(emotions.getEmotion());
+                }
+                else{
+                    String message= "An error occured, please try again later";
+                    Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<emotion> call, Throwable t) {
+                String message= t.getLocalizedMessage();
+                Toast.makeText(UploadPhotoActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        });
+
+    }
+
 }
